@@ -1,0 +1,83 @@
+# RPS.py
+
+# Main player function
+def player(prev_play, opponent_history=[]):
+    # Record opponent history
+    if prev_play:
+        opponent_history.append(prev_play)
+
+    # --- Bot-Specific Strategies ---
+    # Identify opponents based on the patterns in their play histories
+
+    # 1. QUINCY: follows a fixed repeating pattern
+    quincy_pattern = ["R", "P", "S", "R", "P"]
+    if len(opponent_history) >= 5 and opponent_history[-5:] == quincy_pattern:
+        # Predict next pattern item
+        idx = len(opponent_history) % len(quincy_pattern)
+        predicted = quincy_pattern[idx]
+        return counter(predicted)
+
+    # 2. ABBEY: strategy uses history and tends toward repeated statistical tendencies
+    if is_abbey(opponent_history):
+        predicted = predict_freq(opponent_history)
+        return counter(predicted)
+
+    # 3. KRIS: mirrors the opponent a lot but with predictable timing
+    if is_kris(opponent_history):
+        if len(opponent_history) == 0:
+            return "R"
+        return counter(opponent_history[-1])
+
+    # 4. MRUGESH: uses last 10 moves to decide
+    if is_mrugesh(opponent_history):
+        predicted = predict_last_n(opponent_history, 10)
+        return counter(predicted)
+
+    # FALLBACK MODEL (generic predictor)
+    predicted = predict_last_n(opponent_history, 5)
+    return counter(predicted)
+
+
+# --- Helper Functions Below ----
+
+def counter(move):
+    """Returns the winning move against the given one."""
+    beats = {"R": "P", "P": "S", "S": "R"}
+    return beats.get(move, "R")
+
+
+def predict_freq(history):
+    """Predict the opponent's most frequent move."""
+    if not history:
+        return "R"
+    from collections import Counter
+    c = Counter(history)
+    return c.most_common(1)[0][0]
+
+
+def predict_last_n(history, n):
+    """Predict the opponent’s most common last N moves."""
+    if len(history) < n:
+        n = len(history)
+    if n == 0:
+        return "R"
+    from collections import Counter
+    return Counter(history[-n:]).most_common(1)[0][0]
+
+
+# --- Heuristics to identify each bot ---
+def is_quincy(history):
+    pattern = ["R", "P", "S", "R", "P"]
+    return len(history) >= 5 and history[:5] == pattern
+
+
+def is_abbey(history):
+    return len(history) > 20 and len(set(history[-10:])) > 1
+
+
+def is_kris(history):
+    return len(history) > 15 and history[-1] in ["R", "P", "S"]
+
+
+def is_mrugesh(history):
+    return len(history) > 12
